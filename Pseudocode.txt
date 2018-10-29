@@ -1,0 +1,34 @@
+Current Chameleon (Pfizer)
+
+MissingData_Init Class
+	
+	Get the Validation_Flow 
+		ValidatedFlowSelection Class
+			tValidatedFlow := Using Tbl_Lookup in ValidationFlowConfig
+	
+	Get the TransType -> tTransType :=  using SQL_execute from TransType table
+	
+	If No TransType derived then tTransType := 'None'
+	
+	If tTransType is 'None' then TransTypeIsNoneFlag is True
+	
+	Get the ReqDataPerTransType -> tReqDataList := SQL_execute from ReqDataPerTransType table
+	
+	Start Check Fb and Inv level
+		MissingData_FbInv Class
+			Get the DataFields -> tDataElemList := SQL_execute from DataElemsToCheck table
+			Count the DataFields + header (1) -> DataElemCnt := List_Cnt(replace(tDataElemList,'§', ''),'[]')
+			Set DataCounter to 1 to be used in 
+			MissingData_CheckDataFields Class (do_while DataElemCnt - 1)
+				Check ALL DataFields in tDataElemList if it is Missing or Not.
+					If Missing {null, empty} -> tMissingList := Rules_Eval(per DataField)
+			Return the DataFields that is Missing per Rules_Eval -> tMissingData := tMissingList
+			Count the DataFields -> MissingDataCnt := List_Cnt(tMissingData , '[]')
+			MissingData_Validate Class (do_while MissingDataCnt)
+				Check the DataFields if it is in the tReqDataList
+					If it's in tReqDataList then IsRequiredFlag is True
+				Get the DataCondition of the DataFields in tMissingData list-> tDataState := Using Tbl_Lookup in tValidatedFlow (this is the individual Validation Flow table)
+					If using 'Default_Validation', tDataState := the default DataCondtion will be 'UnknownMissing'
+				Calling the M# for the metrics to persist
+					dataResult := If there's TransType derived then IsRequiredFlag requires to be TruedataResult := If there's NO TransType derived (TransTypeIsNoneFlag is True) then no need for IsRequiredFlag to be true. This means that all 
+							Missing DataFields will be persisted in the metrics.
